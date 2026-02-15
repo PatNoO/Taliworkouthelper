@@ -4,6 +4,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.collectAsState
+import com.example.taliworkouthelper.partner.Partner
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -11,6 +13,9 @@ import com.example.taliworkouthelper.auth.AuthViewModel
 import com.example.taliworkouthelper.auth.FakeAuthRepository
 import com.example.taliworkouthelper.auth.LoginScreen
 import com.example.taliworkouthelper.auth.RegisterScreen
+import com.example.taliworkouthelper.partner.FakePartnerRepository
+import com.example.taliworkouthelper.partner.PartnerListScreen
+import com.example.taliworkouthelper.partner.PartnerViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -37,6 +42,14 @@ fun AppNavHost() {
         }
         composable("home") {
             Text("Welcome to Tali Workout Helper - Home")
+        }
+        composable("partners") {
+            val partnerRepo = FakePartnerRepository()
+            val partnerVm = PartnerViewModel(partnerRepo)
+            val partnersState = partnerVm.state.collectAsState(initial = com.example.taliworkouthelper.partner.PartnerState())
+            PartnerListScreen(partners = partnersState.value.partners, onConnect = { id ->
+                partnerVm.connect(id) { /* no-op for preview */ }
+            })
         }
     }
 }
