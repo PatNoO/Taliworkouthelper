@@ -1,11 +1,16 @@
 package com.example.taliworkouthelper
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.collectAsState
-import com.example.taliworkouthelper.partner.Partner
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,40 +20,71 @@ import com.example.taliworkouthelper.auth.LoginScreen
 import com.example.taliworkouthelper.auth.RegisterScreen
 import com.example.taliworkouthelper.partner.FakePartnerRepository
 import com.example.taliworkouthelper.partner.PartnerListScreen
+import com.example.taliworkouthelper.partner.PartnerState
 import com.example.taliworkouthelper.partner.PartnerViewModel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import com.example.taliworkouthelper.schedule.FakeWorkShiftRepository
+import com.example.taliworkouthelper.schedule.WorkScheduleScreen
+import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
+import com.example.taliworkouthelper.schedule.WorkShift
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
-    val repo = FakeAuthRepository()
-    val viewModel = AuthViewModel(repo)
+    val authRepo = FakeAuthRepository()
+    val authViewModel = AuthViewModel(authRepo)
+    val scheduleVm = WorkScheduleViewModel(FakeWorkShiftRepository())
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
             LoginScreen(onLogin = { email, pass ->
-                viewModel.login(email, pass) { _ ->
+                authViewModel.login(email, pass) { _ ->
                     navController.navigate("home")
                 }
             }, onNavigateToRegister = { navController.navigate("register") })
         }
         composable("register") {
             RegisterScreen(onRegister = { email, pass ->
-                viewModel.register(email, pass) { _ ->
+                authViewModel.register(email, pass) { _ ->
                     navController.navigate("home")
                 }
             }, onNavigateToLogin = { navController.navigate("login") })
         }
         composable("home") {
-            Text("Welcome to Tali Workout Helper - Home")
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Welcome to Tali Workout Helper - Home")
+                Button(onClick = { navController.navigate("schedule") }) {
+                    Text("Open availability")
+                }
+                Button(onClick = { navController.navigate("partners") }) {
+                    Text("Open partners")
+                }
+            }
+        }
+        composable("schedule") {
+            val state by scheduleVm.state.collectAsState()
+            WorkScheduleScreen(
+                state = state,
+                onAddSampleShift = {
+                    val newShift = WorkShift(
+                        id = "sample-${System.currentTimeMillis()}",
+                        startHour = 9,
+                        endHour = 17,
+                        dayOfWeek = state.selectedDay
+                    )
+                    scheduleVm.addShift(newShift) { }
+                },
+                onRemoveShift = scheduleVm::removeShift,
+                onScopeChange = scheduleVm::setAvailabilityScope,
+                onDurationChange = scheduleVm::setMinDurationMinutes,
+                onDayChange = scheduleVm::setSelectedDay
+            )
         }
         composable("partners") {
             val partnerRepo = FakePartnerRepository()
             val partnerVm = PartnerViewModel(partnerRepo)
-            val partnersState = partnerVm.state.collectAsState(initial = com.example.taliworkouthelper.partner.PartnerState())
+            val partnersState = partnerVm.state.collectAsState(initial = PartnerState())
             PartnerListScreen(partners = partnersState.value.partners, onConnect = { id ->
-                partnerVm.connect(id) { /* no-op for preview */ }
+                partnerVm.connect(id) { }
             })
         }
     }
