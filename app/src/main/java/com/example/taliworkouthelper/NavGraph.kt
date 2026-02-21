@@ -23,6 +23,9 @@ import com.example.taliworkouthelper.partner.FakePartnerRepository
 import com.example.taliworkouthelper.partner.PartnerListScreen
 import com.example.taliworkouthelper.partner.PartnerState
 import com.example.taliworkouthelper.partner.PartnerViewModel
+import com.example.taliworkouthelper.request.FirestoreTrainingRequestRepository
+import com.example.taliworkouthelper.request.TrainingRequestScreen
+import com.example.taliworkouthelper.request.TrainingRequestViewModel
 import com.example.taliworkouthelper.schedule.FirestoreWorkScheduleRepository
 import com.example.taliworkouthelper.schedule.WorkScheduleScreen
 import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
@@ -39,6 +42,7 @@ fun AppNavHost() {
     val authRepo = FakeAuthRepository()
     val authViewModel = remember { AuthViewModel(authRepo) }
     val scheduleViewModel = remember { WorkScheduleViewModel(FirestoreWorkScheduleRepository()) }
+    val trainingRequestViewModel = remember { TrainingRequestViewModel(FirestoreTrainingRequestRepository()) }
     val activeWorkoutViewModel = remember { ActiveWorkoutViewModel(FirestoreWorkoutSessionRepository()) }
     val templateViewModel = remember { WorkoutTemplateViewModel(FirestoreWorkoutTemplateRepository()) }
 
@@ -72,6 +76,8 @@ fun AppNavHost() {
                 Button(onClick = { navController.navigate("schedule") }) {
                     Text("Open work schedule")
                 }
+                Button(onClick = { navController.navigate("trainingRequests") }) {
+                    Text("Open training requests")
                 Button(onClick = { navController.navigate("activeWorkout") }) {
                     Text("Open active workout")
                 Button(onClick = { navController.navigate("templates") }) {
@@ -98,6 +104,18 @@ fun AppNavHost() {
                 onDismissError = scheduleViewModel::dismissError
             )
         }
+        composable("trainingRequests") {
+            val state by trainingRequestViewModel.state.collectAsState()
+            TrainingRequestScreen(
+                state = state,
+                formatEpoch = trainingRequestViewModel::formatEpoch,
+                onPartnerUidChanged = trainingRequestViewModel::onPartnerUidChanged,
+                onStartChanged = trainingRequestViewModel::onStartChanged,
+                onEndChanged = trainingRequestViewModel::onEndChanged,
+                onSendRequest = trainingRequestViewModel::sendRequest,
+                onAcceptRequest = trainingRequestViewModel::acceptRequest,
+                onDeclineRequest = trainingRequestViewModel::declineRequest,
+                onDismissError = trainingRequestViewModel::dismissError
         composable("activeWorkout") {
             val state by activeWorkoutViewModel.state.collectAsState()
             ActiveWorkoutScreen(
