@@ -101,17 +101,30 @@ Rules:
 
 # 🎫 Linear Workflow (MANDATORY)
 
+Linear is the single source of truth for feature scope and status.
+
+## Implementation Rules
+
 When implementing a ticket:
 
 1. Read the full Linear ticket.
 2. Follow the Acceptance Criteria exactly.
-3. Do not expand scope without instruction.
-4. Confirm AC coverage in PR.
+3. Do not expand scope without explicit instruction.
+4. Confirm Acceptance Criteria coverage in the Pull Request.
 
-If ticket says "UI only":
-- Use placeholder/mock data.
-- Add TODOs for backend wiring.
-- Do not fake business logic.
+If a ticket is marked **"UI only"**:
+- Use placeholder or mock data.
+- Add TODOs for future backend wiring.
+- Do not simulate business logic.
+
+---
+
+## Status Rules
+
+1. When starting implementation, move the ticket to **In Progress**.
+2. Keep the ticket in **In Progress** until the Pull Request is merged.
+3. After merge and verification, move the ticket to **Done**.
+4. Do not move tickets between statuses without explicit confirmation.
 
 ---
 
