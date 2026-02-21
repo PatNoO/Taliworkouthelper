@@ -128,41 +128,28 @@ If a ticket is marked **"UI only"**:
 
 ---
 
-## 🔁 Post-Push Review & Control Rule (MANDATORY)
+## 🔁 Post-Push Control (MANDATORY)
 
-After each push to the remote branch, the agent must pause before starting any new ticket.
+After each push to the remote feature branch:
 
-### Step 1 — Implementation Summary (REQUIRED)
+1. The agent must checkout `main`.
+2. The agent must ask whether to pull latest changes:
 
-The agent must provide a concise summary of what was just pushed, including:
+"Pull latest changes on main? (Y/n)"
 
-- Ticket ID
-- Short description of what was implemented
-- Layers affected (Data / ViewModel / UI)
-- Any important architectural decisions
-- Any known limitations or TODOs
+- If **Y** or Enter → run `git pull`.
+- If **n** → skip pull.
 
-This summary must be clear and scannable.
-
----
-
-### Step 2 — Next Ticket Proposal (REQUIRED)
-
-After the summary, the agent must:
-
-1. Suggest the next prioritized ticket based on MoSCoW priority and Linear board state.
-2. Ask for explicit confirmation:
+3. The agent must then ask for confirmation before starting a new ticket:
 
 "Do you want me to proceed with the next prioritized story? (Y/n)"
 
+- If **Y** or Enter → run `new ticket`.
+- If **n** → wait for next comand.
+
 Rules:
-
-- If the user answers **Y** or presses Enter → continue.
-- If the user answers **n** → stop and wait for instructions.
-- Never automatically start a new ticket after a push.
-- Never assume continuation without confirmation.
-
-The agent must treat this rule as mandatory.
+- Never start a new ticket automatically without confirmation.
+- Keep chat messages brief; PR description is the source of truth for implementation details.
 
 ---
 
