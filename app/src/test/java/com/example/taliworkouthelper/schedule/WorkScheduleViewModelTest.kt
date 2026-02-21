@@ -1,14 +1,17 @@
 package com.example.taliworkouthelper.schedule
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -18,30 +21,74 @@ class WorkScheduleViewModelTest {
 
     @Before
     fun setup() {
-    Dispatchers.setMain(dispatcher)
+        Dispatchers.setMain(dispatcher)
     }
 
     @After
     fun tearDown() {
-    Dispatchers.resetMain()
+        Dispatchers.resetMain()
     }
 
     @Test
-    fun `add and remove shift`() = runBlocking {
-        val repo = FakeWorkShiftRepository()
-        val vm = WorkScheduleViewModel(repo)
+    fun `submit valid shift adds item and clears form`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
 
-        assertTrue(vm.state.value.shifts.isEmpty())
+        vm.onStartHourChanged("9")
+        vm.onEndHourChanged("17")
+        vm.onSubmitShift()
+        delay(20)
 
-        var res: Result<WorkShift>? = null
-        vm.addShift(WorkShift("s1", 9, 17)) { res = it }
-        kotlinx.coroutines.delay(10)
-        assertNotNull(res)
-        assertTrue(res!!.isSuccess)
         assertEquals(1, vm.state.value.shifts.size)
+        assertEquals("", vm.state.value.form.startHourInput)
+        assertEquals("", vm.state.value.form.endHourInput)
+        assertNull(vm.state.value.errorMessage)
+    }
 
-        vm.removeShift("s1")
-        kotlinx.coroutines.delay(10)
+    @Test
+    fun `invalid range sets validation error`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+
+        vm.onStartHourChanged("18")
+        vm.onEndHourChanged("10")
+        vm.onSubmitShift()
+
+        assertEquals("End hour must be after start hour", vm.state.value.errorMessage)
+        assertTrue(vm.state.value.shifts.isEmpty())
+    }
+
+    @Test
+    fun `edit updates existing shift`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+
+        vm.onStartHourChanged("8")
+        vm.onEndHourChanged("10")
+        vm.onSubmitShift()
+        delay(20)
+
+        val created = vm.state.value.shifts.first()
+        vm.onEditShift(created)
+        vm.onEndHourChanged("11")
+        vm.onSubmitShift()
+        delay(20)
+
+        assertEquals(1, vm.state.value.shifts.size)
+        assertEquals(11, vm.state.value.shifts.first().endHour)
+        assertFalse(vm.state.value.form.isEditing)
+    }
+
+    @Test
+    fun `remove deletes existing shift`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+
+        vm.onStartHourChanged("6")
+        vm.onEndHourChanged("8")
+        vm.onSubmitShift()
+        delay(20)
+
+        val createdId = vm.state.value.shifts.first().id
+        vm.removeShift(createdId)
+        delay(20)
+
         assertTrue(vm.state.value.shifts.isEmpty())
     }
 }
