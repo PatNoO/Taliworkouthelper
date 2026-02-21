@@ -29,6 +29,17 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+private val OverviewTextColor = Color(0xFFF4F1FF)
+private val OverviewMetaColor = Color(0xFFC5B8E6)
+private val OverviewBackgroundTop = Color(0xFF080810)
+private val OverviewBackgroundBottom = Color(0xFF141230)
+private val OverviewCardBackground = Color(0xD914122C)
+private val OverviewCardBorder = Color(0x42B78BFF)
+private val OverviewItemBackground = Color(0x08FFFFFF)
+private val OverviewItemBorder = Color(0x2EB78BFF)
+private val OverviewTagBackground = Color(0x4D7C3CFF)
+private val OverviewTagText = Color(0xFFE9DCFF)
+
 private val DetailTextColor = Color(0xFFF5F1FF)
 private val DetailMetaColor = Color(0xFFC8BCE8)
 private val DetailBackgroundTop = Color(0xFF070711)
@@ -44,25 +55,57 @@ fun OverviewScreen(
     onOpenSessionDetail: (String) -> Unit,
     onDismissError: () -> Unit
 ) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Overview")
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(OverviewBackgroundTop, OverviewBackgroundBottom)))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text("Overview", color = OverviewTextColor, fontWeight = FontWeight.SemiBold)
 
-        if (state.errorMessage != null) {
-            Card {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Error: ${state.errorMessage}")
-                    Button(onClick = onDismissError) {
+            if (state.errorMessage != null) {
+                OverviewCard {
+                    Text("Error", color = OverviewTextColor, fontWeight = FontWeight.Medium)
+                    Text(state.errorMessage, color = OverviewTextColor)
+                    Text(
+                        "Design note: keep error inline so upcoming/history context remains visible.",
+                        color = OverviewMetaColor
+                    )
+                    Button(
+                        onClick = onDismissError,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = OverviewTextColor
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF7C3CFF), Color(0xFFD54FFF))))
+                    ) {
                         Text("Dismiss")
                     }
                 }
             }
-        }
 
-        when {
-            state.isLoading -> Text("Loading overview...")
-            else -> {
-                UpcomingBookingsSection(state.upcomingBookings, state.isEmptyBookings)
-                WorkoutHistorySection(state.workoutHistory, state.isEmptyWorkoutHistory, onOpenSessionDetail)
+            when {
+                state.isLoading -> {
+                    OverviewCard {
+                        Text("Loading overview...", color = OverviewTextColor, fontWeight = FontWeight.Medium)
+                        Text(
+                            "Design note: preserve split sections with placeholders while data streams in.",
+                            color = OverviewMetaColor
+                        )
+                    }
+                }
+
+                else -> {
+                    UpcomingBookingsSection(state.upcomingBookings, state.isEmptyBookings)
+                    WorkoutHistorySection(state.workoutHistory, state.isEmptyWorkoutHistory, onOpenSessionDetail)
+                }
             }
         }
     }
@@ -133,6 +176,74 @@ fun WorkoutSessionDetailScreen(session: WorkoutSession?, onBack: () -> Unit) {
 }
 
 @Composable
+private fun UpcomingBookingsSection(bookings: List<UpcomingBooking>, isEmpty: Boolean) {
+    OverviewCard {
+        SectionHeader(title = "Upcoming", tag = "Next")
+        if (isEmpty) {
+            Text("No upcoming bookings", color = OverviewTextColor)
+            Text(
+                "Design note: keep this section visible to reinforce split overview layout.",
+                color = OverviewMetaColor
+            )
+            return@OverviewCard
+        }
+
+        bookings.forEach { booking ->
+            OverviewItem {
+                Text(booking.partnerName, color = OverviewTextColor, fontWeight = FontWeight.Medium)
+                if (booking.title.isNotBlank()) {
+                    Text(booking.title, color = OverviewMetaColor)
+                }
+                Text(formatBookingTime(booking.startAtMillis, booking.endAtMillis), color = OverviewMetaColor)
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkoutHistorySection(
+    history: List<WorkoutSession>,
+    isEmpty: Boolean,
+    onOpenSessionDetail: (String) -> Unit
+) {
+    OverviewCard {
+        SectionHeader(title = "History", tag = "Timeline")
+        if (isEmpty) {
+            Text("No completed workouts", color = OverviewTextColor)
+            Text(
+                "Design note: highlight empty history with clear path to start logging sessions.",
+                color = OverviewMetaColor
+            )
+            return@OverviewCard
+        }
+
+        history.forEach { session ->
+            OverviewItem {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Session ${session.id.take(8)}", color = OverviewTextColor, fontWeight = FontWeight.Medium)
+                        Text("Exercises: ${session.exerciseLogs.size}", color = OverviewMetaColor)
+                    }
+                    Button(
+                        onClick = { onOpenSessionDetail(session.id) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = OverviewTextColor),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Brush.horizontalGradient(listOf(Color(0xFF7C3CFF), Color(0xFFD54FFF))))
+                    ) {
+                        Text("Details")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun DetailTopBar(onBack: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -153,6 +264,57 @@ private fun DetailTopBar(onBack: () -> Unit) {
             Text("Back")
         }
         Text("Workout Session Detail", color = DetailTextColor, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, tag: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, color = OverviewTextColor, fontWeight = FontWeight.SemiBold)
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(OverviewTagBackground)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(tag, color = OverviewTagText)
+        }
+    }
+}
+
+@Composable
+private fun OverviewCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OverviewCardBackground),
+        border = BorderStroke(1.dp, OverviewCardBorder),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun OverviewItem(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = OverviewItemBackground),
+        border = BorderStroke(1.dp, OverviewItemBorder),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            content = content
+        )
     }
 }
 
@@ -184,63 +346,6 @@ private fun SetRow(setLabel: String, reps: String, weight: String) {
         Text(setLabel, color = DetailTextColor, modifier = Modifier.weight(1f))
         Text(reps, color = DetailMetaColor)
         Text(weight, color = DetailMetaColor)
-    }
-}
-
-@Composable
-private fun UpcomingBookingsSection(bookings: List<UpcomingBooking>, isEmpty: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Upcoming bookings")
-        if (isEmpty) {
-            Text("No upcoming bookings")
-            return
-        }
-
-        bookings.forEach { booking ->
-            Card {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(booking.partnerName)
-                    if (booking.title.isNotBlank()) {
-                        Text(booking.title)
-                    }
-                    Text(formatBookingTime(booking.startAtMillis, booking.endAtMillis))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WorkoutHistorySection(
-    history: List<WorkoutSession>,
-    isEmpty: Boolean,
-    onOpenSessionDetail: (String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Workout history")
-        if (isEmpty) {
-            Text("No completed workouts")
-            return
-        }
-
-        history.forEach { session ->
-            Card {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Session ${session.id.take(8)}")
-                        Text("Exercises: ${session.exerciseLogs.size}")
-                    }
-                    Button(onClick = { onOpenSessionDetail(session.id) }) {
-                        Text("Details")
-                    }
-                }
-            }
-        }
     }
 }
 
