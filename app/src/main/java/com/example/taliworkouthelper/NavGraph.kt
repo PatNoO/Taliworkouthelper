@@ -29,6 +29,9 @@ import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
 import com.example.taliworkouthelper.session.ActiveWorkoutScreen
 import com.example.taliworkouthelper.session.ActiveWorkoutViewModel
 import com.example.taliworkouthelper.session.FirestoreWorkoutSessionRepository
+import com.example.taliworkouthelper.template.FirestoreWorkoutTemplateRepository
+import com.example.taliworkouthelper.template.WorkoutTemplateScreen
+import com.example.taliworkouthelper.template.WorkoutTemplateViewModel
 
 @Composable
 fun AppNavHost() {
@@ -37,6 +40,7 @@ fun AppNavHost() {
     val authViewModel = remember { AuthViewModel(authRepo) }
     val scheduleViewModel = remember { WorkScheduleViewModel(FirestoreWorkScheduleRepository()) }
     val activeWorkoutViewModel = remember { ActiveWorkoutViewModel(FirestoreWorkoutSessionRepository()) }
+    val templateViewModel = remember { WorkoutTemplateViewModel(FirestoreWorkoutTemplateRepository()) }
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -70,6 +74,8 @@ fun AppNavHost() {
                 }
                 Button(onClick = { navController.navigate("activeWorkout") }) {
                     Text("Open active workout")
+                Button(onClick = { navController.navigate("templates") }) {
+                    Text("Open workout templates")
                 }
                 Button(onClick = { navController.navigate("partners") }) {
                     Text("Open partners")
@@ -104,6 +110,20 @@ fun AppNavHost() {
                 onAddSet = activeWorkoutViewModel::addSetToActiveSession,
                 onCompleteSession = activeWorkoutViewModel::completeActiveSession,
                 onDismissError = activeWorkoutViewModel::dismissError
+        composable("templates") {
+            val state by templateViewModel.state.collectAsState()
+            WorkoutTemplateScreen(
+                state = state,
+                onTitleChanged = templateViewModel::onTitleChanged,
+                onExerciseNameChanged = templateViewModel::onExerciseNameChanged,
+                onExerciseSetsChanged = templateViewModel::onExerciseSetsChanged,
+                onExerciseRepsChanged = templateViewModel::onExerciseRepsChanged,
+                onAddExercise = templateViewModel::addExerciseToForm,
+                onRemoveExercise = templateViewModel::removeExerciseFromForm,
+                onSaveTemplate = templateViewModel::onSaveTemplate,
+                onEditTemplate = templateViewModel::onEditTemplate,
+                onCancelEdit = templateViewModel::onCancelEdit,
+                onDismissError = templateViewModel::dismissError
             )
         }
         composable("partners") {
