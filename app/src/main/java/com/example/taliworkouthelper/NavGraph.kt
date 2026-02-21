@@ -92,6 +92,7 @@ fun AppNavHost() {
                 }
                 Button(onClick = { navController.navigate("trainingRequests") }) {
                     Text("Open training requests")
+                }
                 Button(onClick = { navController.navigate("activeWorkout") }) {
                     Text("Open active workout")
                 }
@@ -185,6 +186,8 @@ fun AppNavHost() {
                 onAcceptRequest = trainingRequestViewModel::acceptRequest,
                 onDeclineRequest = trainingRequestViewModel::declineRequest,
                 onDismissError = trainingRequestViewModel::dismissError
+            )
+        }
         composable("activeWorkout") {
             val state by activeWorkoutViewModel.state.collectAsState()
             ActiveWorkoutScreen(
