@@ -1,22 +1,42 @@
 package com.example.taliworkouthelper.overview
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.taliworkouthelper.session.WorkoutSession
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+private val DetailTextColor = Color(0xFFF5F1FF)
+private val DetailMetaColor = Color(0xFFC8BCE8)
+private val DetailBackgroundTop = Color(0xFF070711)
+private val DetailBackgroundBottom = Color(0xFF121029)
+private val DetailCardBackground = Color(0xDB15122E)
+private val DetailCardBorder = Color(0x38B48CFF)
+private val BackButtonBackground = Color(0x0AFFFFFF)
+private val BackButtonBorder = Color(0x4DB48CFF)
 
 @Composable
 fun OverviewScreen(
@@ -50,37 +70,120 @@ fun OverviewScreen(
 
 @Composable
 fun WorkoutSessionDetailScreen(session: WorkoutSession?, onBack: () -> Unit) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Workout Session Detail")
-        Button(onClick = onBack) { Text("Back") }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(DetailBackgroundTop, DetailBackgroundBottom)))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            DetailTopBar(onBack = onBack)
 
-        if (session == null) {
-            Text("Session not found")
-            return
-        }
+            if (session == null) {
+                DetailCard {
+                    Text("Session not found", color = DetailTextColor, fontWeight = FontWeight.Medium)
+                    Text(
+                        "Fallback display keeps back navigation visible when detail data is missing.",
+                        color = DetailMetaColor
+                    )
+                }
+                return@Column
+            }
 
-        Text("Session ID: ${session.id}")
-        Text("General note: ${session.generalNote.ifBlank { "No note" }}")
+            DetailCard {
+                Text("Session detail", color = DetailTextColor, fontWeight = FontWeight.SemiBold)
+                Text("Session ID: ${session.id}", color = DetailMetaColor)
+                Text(
+                    "General note: ${session.generalNote.ifBlank { "No note" }}",
+                    color = DetailTextColor
+                )
+            }
 
-        if (session.exerciseLogs.isEmpty()) {
-            Text("No logged exercises")
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(session.exerciseLogs) { log ->
-                    Card {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(log.exerciseName)
-                            if (log.note.isNotBlank()) {
-                                Text("Note: ${log.note}")
-                            }
-                            log.sets.forEachIndexed { index, set ->
-                                Text("Set ${index + 1}: ${set.reps} reps @ ${set.weightKg ?: 0.0} kg")
-                            }
+            if (session.exerciseLogs.isEmpty()) {
+                DetailCard {
+                    Text("No logged exercises", color = DetailTextColor, fontWeight = FontWeight.Medium)
+                    Text(
+                        "Empty exercise list fallback is explicitly defined for readability.",
+                        color = DetailMetaColor
+                    )
+                }
+            } else {
+                session.exerciseLogs.forEach { log ->
+                    DetailCard {
+                        Text(log.exerciseName, color = DetailTextColor, fontWeight = FontWeight.SemiBold)
+                        if (log.note.isNotBlank()) {
+                            Text("Note: ${log.note}", color = DetailMetaColor)
+                        }
+                        log.sets.forEachIndexed { index, set ->
+                            SetRow(
+                                setLabel = "Set ${index + 1}",
+                                reps = "${set.reps} reps",
+                                weight = "${set.weightKg ?: 0.0} kg"
+                            )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DetailTopBar(onBack: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Button(
+            onClick = onBack,
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(BackButtonBackground),
+            border = BorderStroke(1.dp, BackButtonBorder),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = DetailTextColor
+            )
+        ) {
+            Text("Back")
+        }
+        Text("Workout Session Detail", color = DetailTextColor, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun DetailCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = DetailCardBackground),
+        border = BorderStroke(1.dp, DetailCardBorder),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun SetRow(setLabel: String, reps: String, weight: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(setLabel, color = DetailTextColor, modifier = Modifier.weight(1f))
+        Text(reps, color = DetailMetaColor)
+        Text(weight, color = DetailMetaColor)
     }
 }
 
