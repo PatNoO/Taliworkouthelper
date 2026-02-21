@@ -1,9 +1,19 @@
 package com.example.taliworkouthelper
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,6 +21,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -79,33 +93,15 @@ fun AppNavHost() {
             )
         }
         composable("home") {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text("Welcome to Tali Workout Helper - Home")
-                Button(onClick = { navController.navigate("overview") }) {
-                    Text("Open overview")
-                }
-                Button(onClick = { navController.navigate("schedule") }) {
-                    Text("Open work schedule")
-                }
-                Button(onClick = { navController.navigate("trainingRequests") }) {
-                    Text("Open training requests")
-                }
-                Button(onClick = { navController.navigate("activeWorkout") }) {
-                    Text("Open active workout")
-                }
-                Button(onClick = { navController.navigate("templates") }) {
-                    Text("Open workout templates")
-                }
-                Button(onClick = { navController.navigate("exercises") }) {
-                    Text("Open exercise library")
-                }
-                Button(onClick = { navController.navigate("partners") }) {
-                    Text("Open partners")
-                }
-            }
+            HomeNavigationScreen(
+                onOpenOverview = { navController.navigate("overview") },
+                onOpenSchedule = { navController.navigate("schedule") },
+                onOpenTrainingRequests = { navController.navigate("trainingRequests") },
+                onOpenActiveWorkout = { navController.navigate("activeWorkout") },
+                onOpenTemplates = { navController.navigate("templates") },
+                onOpenExercises = { navController.navigate("exercises") },
+                onOpenPartners = { navController.navigate("partners") }
+            )
         }
         composable("exercises") {
             val state by exerciseViewModel.state.collectAsState()
@@ -228,6 +224,127 @@ fun AppNavHost() {
                     partnerVm.connect(partnerId) { }
                 }
             )
+        }
+    }
+}
+
+private val HomeBackgroundTop = Color(0xFF07070F)
+private val HomeBackgroundBottom = Color(0xFF121029)
+private val HomeTextColor = Color(0xFFF4F2FF)
+private val HomeMutedTextColor = Color(0xFFBCAEDC)
+private val HomeCardColor = Color(0xD6161230)
+private val HomeCardBorder = Color(0x3DB48CFF)
+
+private data class HomeTile(
+    val title: String,
+    val subtitle: String,
+    val isPrimary: Boolean = false,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun HomeNavigationScreen(
+    onOpenOverview: () -> Unit,
+    onOpenSchedule: () -> Unit,
+    onOpenTrainingRequests: () -> Unit,
+    onOpenActiveWorkout: () -> Unit,
+    onOpenTemplates: () -> Unit,
+    onOpenExercises: () -> Unit,
+    onOpenPartners: () -> Unit
+) {
+    val tiles = listOf(
+        HomeTile("Overview", "Upcoming + history snapshot", true, onOpenOverview),
+        HomeTile("Work Schedule", "Shifts and availability filters", false, onOpenSchedule),
+        HomeTile("Training Requests", "Inbox and pending invites", true, onOpenTrainingRequests),
+        HomeTile("Active Workout", "Log sets, reps, notes quickly", false, onOpenActiveWorkout),
+        HomeTile("Templates", "Build reusable workout plans", false, onOpenTemplates),
+        HomeTile("Exercise Library", "Browse movement references", false, onOpenExercises),
+        HomeTile("Partners", "Connect and manage partner links", true, onOpenPartners)
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(listOf(HomeBackgroundTop, HomeBackgroundBottom))
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color(0x528447FF), Color.Transparent)
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Home", color = HomeTextColor, fontWeight = FontWeight.SemiBold)
+            Text("Quick navigation dashboard", color = HomeMutedTextColor)
+
+            tiles.chunked(2).forEach { rowTiles ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowTiles.forEach { tile ->
+                        HomeTileCard(
+                            tile = tile,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (rowTiles.size == 1) {
+                        Box(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeTileCard(tile: HomeTile, modifier: Modifier = Modifier) {
+    val gradient = if (tile.isPrimary) {
+        Brush.linearGradient(listOf(Color(0x6B7C3CFF), Color(0x3DD54FFF)))
+    } else {
+        Brush.linearGradient(listOf(HomeCardColor, HomeCardColor))
+    }
+
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(gradient),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, HomeCardBorder),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(tile.title, color = HomeTextColor, fontWeight = FontWeight.SemiBold)
+            Text(tile.subtitle, color = HomeMutedTextColor)
+            Button(
+                onClick = tile.onClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = HomeTextColor
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF7C3CFF), Color(0xFFC04DFF))))
+            ) {
+                Text("Open")
+            }
         }
     }
 }
