@@ -48,6 +48,16 @@ class OverviewViewModelTest {
     }
 
     @Test
+    fun `loading completes with empty states when no data exists`() = runTest {
+        val vm = OverviewViewModel(FakeOverviewRepository())
+        delay(20)
+
+        assertFalse(vm.state.value.isLoading)
+        assertTrue(vm.state.value.isEmptyBookings)
+        assertTrue(vm.state.value.isEmptyWorkoutHistory)
+    }
+
+    @Test
     fun `select session exposes detail`() = runTest {
         val repository = FakeOverviewRepository(initialHistory = listOf(sampleSession("s1")))
         val vm = OverviewViewModel(repository)
