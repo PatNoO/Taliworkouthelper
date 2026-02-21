@@ -78,6 +78,21 @@ class WorkScheduleViewModelTest {
     }
 
     @Test
+    fun `form day selection controls persisted shift day`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+
+        vm.onFormDayChanged(DayOfWeek.WEDNESDAY)
+        vm.onStartHourChanged("9")
+        vm.onEndHourChanged("11")
+        vm.onSubmitShift()
+        delay(20)
+
+        vm.setSelectedDay(DayOfWeek.MONDAY)
+        val created = vm.state.value.shifts.first()
+        assertEquals(DayOfWeek.WEDNESDAY, created.dayOfWeek)
+    }
+
+    @Test
     fun `remove deletes existing shift`() = runTest {
         val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
 

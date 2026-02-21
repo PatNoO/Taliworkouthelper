@@ -19,6 +19,7 @@ fun WorkScheduleScreen(
     state: WorkScheduleUiState,
     onStartHourChanged: (String) -> Unit,
     onEndHourChanged: (String) -> Unit,
+    onFormDayChange: (DayOfWeek) -> Unit,
     onSubmitShift: () -> Unit,
     onCancelEdit: () -> Unit,
     onEditShift: (WorkShift) -> Unit,
@@ -49,6 +50,7 @@ fun WorkScheduleScreen(
             state = state,
             onStartHourChanged = onStartHourChanged,
             onEndHourChanged = onEndHourChanged,
+            onFormDayChange = onFormDayChange,
             onSubmitShift = onSubmitShift,
             onCancelEdit = onCancelEdit
         )
@@ -78,6 +80,7 @@ private fun ShiftFormSection(
     state: WorkScheduleUiState,
     onStartHourChanged: (String) -> Unit,
     onEndHourChanged: (String) -> Unit,
+    onFormDayChange: (DayOfWeek) -> Unit,
     onSubmitShift: () -> Unit,
     onCancelEdit: () -> Unit
 ) {
@@ -85,7 +88,8 @@ private fun ShiftFormSection(
 
     Card {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Shift day: ${state.selectedDay.label()}")
+            Text("Shift day: ${state.form.selectedDay.label()}")
+            DayFilterRow(selectedDay = state.form.selectedDay, onDayChange = onFormDayChange)
             OutlinedTextField(
                 value = state.form.startHourInput,
                 onValueChange = onStartHourChanged,

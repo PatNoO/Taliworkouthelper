@@ -16,7 +16,8 @@ private const val MAX_HOUR = 23
 data class ShiftFormUiState(
     val editingShiftId: String? = null,
     val startHourInput: String = "",
-    val endHourInput: String = ""
+    val endHourInput: String = "",
+    val selectedDay: DayOfWeek = DayOfWeek.MONDAY
 ) {
     val isEditing: Boolean = editingShiftId != null
 }
@@ -61,7 +62,8 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
                 form = ShiftFormUiState(
                     editingShiftId = shift.id,
                     startHourInput = shift.startHour.toString(),
-                    endHourInput = shift.endHour.toString()
+                    endHourInput = shift.endHour.toString(),
+                    selectedDay = shift.dayOfWeek
                 ),
                 selectedDay = shift.dayOfWeek,
                 errorMessage = null
@@ -76,6 +78,12 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
         }
     }
 
+    fun onFormDayChanged(day: DayOfWeek) {
+        mutableState.update { current ->
+            current.copy(form = current.form.copy(selectedDay = day), errorMessage = null)
+        }
+    }
+
     fun onSubmitShift() {
         val formSnapshot = mutableState.value.form
         val validation = validateForm(formSnapshot)
@@ -87,12 +95,11 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
         }
 
         val validData = validation.getOrThrow()
-        val selectedDay = mutableState.value.selectedDay
         val shift = WorkShift(
             id = formSnapshot.editingShiftId ?: UUID.randomUUID().toString(),
             startHour = validData.startHour,
             endHour = validData.endHour,
-            dayOfWeek = selectedDay
+            dayOfWeek = formSnapshot.selectedDay
         )
 
         viewModelScope.launch {

@@ -74,6 +74,7 @@ fun AppNavHost() {
                 state = state,
                 onStartHourChanged = scheduleViewModel::onStartHourChanged,
                 onEndHourChanged = scheduleViewModel::onEndHourChanged,
+                onFormDayChange = scheduleViewModel::onFormDayChanged,
                 onSubmitShift = scheduleViewModel::onSubmitShift,
                 onCancelEdit = scheduleViewModel::onCancelEdit,
                 onEditShift = scheduleViewModel::onEditShift,
