@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,13 +26,17 @@ import com.example.taliworkouthelper.partner.PartnerViewModel
 import com.example.taliworkouthelper.schedule.FirestoreWorkScheduleRepository
 import com.example.taliworkouthelper.schedule.WorkScheduleScreen
 import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
+import com.example.taliworkouthelper.template.FirestoreWorkoutTemplateRepository
+import com.example.taliworkouthelper.template.WorkoutTemplateScreen
+import com.example.taliworkouthelper.template.WorkoutTemplateViewModel
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
     val authRepo = FakeAuthRepository()
-    val authViewModel = AuthViewModel(authRepo)
-    val scheduleViewModel = WorkScheduleViewModel(FirestoreWorkScheduleRepository())
+    val authViewModel = remember { AuthViewModel(authRepo) }
+    val scheduleViewModel = remember { WorkScheduleViewModel(FirestoreWorkScheduleRepository()) }
+    val templateViewModel = remember { WorkoutTemplateViewModel(FirestoreWorkoutTemplateRepository()) }
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -63,6 +68,9 @@ fun AppNavHost() {
                 Button(onClick = { navController.navigate("schedule") }) {
                     Text("Open work schedule")
                 }
+                Button(onClick = { navController.navigate("templates") }) {
+                    Text("Open workout templates")
+                }
                 Button(onClick = { navController.navigate("partners") }) {
                     Text("Open partners")
                 }
@@ -82,6 +90,22 @@ fun AppNavHost() {
                 onDurationChange = scheduleViewModel::setMinDurationMinutes,
                 onDayChange = scheduleViewModel::setSelectedDay,
                 onDismissError = scheduleViewModel::dismissError
+            )
+        }
+        composable("templates") {
+            val state by templateViewModel.state.collectAsState()
+            WorkoutTemplateScreen(
+                state = state,
+                onTitleChanged = templateViewModel::onTitleChanged,
+                onExerciseNameChanged = templateViewModel::onExerciseNameChanged,
+                onExerciseSetsChanged = templateViewModel::onExerciseSetsChanged,
+                onExerciseRepsChanged = templateViewModel::onExerciseRepsChanged,
+                onAddExercise = templateViewModel::addExerciseToForm,
+                onRemoveExercise = templateViewModel::removeExerciseFromForm,
+                onSaveTemplate = templateViewModel::onSaveTemplate,
+                onEditTemplate = templateViewModel::onEditTemplate,
+                onCancelEdit = templateViewModel::onCancelEdit,
+                onDismissError = templateViewModel::dismissError
             )
         }
         composable("partners") {
