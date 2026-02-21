@@ -38,7 +38,16 @@ private val LoginViolet = Color(0xFF7C3CFF)
 private val LoginFuchsia = Color(0xFFD54FFF)
 private val LoginErrorText = Color(0xFFFF7CA5)
 private val LoginErrorBg = Color(0x1AFF7CA5)
-private val LoginErrorStroke = Color(0x4DFF7CA5)
+
+private val RegisterBgTop = Color(0xFF07070F)
+private val RegisterBgBottom = Color(0xFF12122A)
+private val RegisterPanel = Color(0xD114122C)
+private val RegisterStroke = Color(0x47B48CFF)
+private val RegisterText = Color(0xFFF4F0FF)
+private val RegisterMuted = Color(0xFFB8A8D9)
+private val RegisterPrimary = Color(0xFF8B3DFF)
+private val RegisterPrimary2 = Color(0xFFD14DFF)
+private val RegisterDanger = Color(0xFFFF5F8F)
 
 @Composable
 fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> Unit) {
@@ -82,12 +91,18 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
                 AuthInput(
                     value = email.value,
                     onValueChange = { email.value = it },
-                    label = "Email"
+                    label = "Email",
+                    stroke = LoginStroke,
+                    textColor = LoginText,
+                    mutedColor = LoginMuted
                 )
                 AuthInput(
                     value = password.value,
                     onValueChange = { password.value = it },
-                    label = "Password"
+                    label = "Password",
+                    stroke = LoginStroke,
+                    textColor = LoginText,
+                    mutedColor = LoginMuted
                 )
 
                 Button(
@@ -116,22 +131,17 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
                     Text("Register")
                 }
 
-                // Design notes required by NOO-65 for loading and error states.
                 Text("Loading state note: disable inputs and keep button gradient with loading label.", color = LoginMuted)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
                         .background(LoginErrorBg)
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.Start
+                        .padding(8.dp)
                 ) {
                     Text(
                         "Error state note: show inline auth error banner without collapsing form layout.",
-                        color = LoginErrorText,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Transparent)
+                        color = LoginErrorText
                     )
                 }
             }
@@ -143,30 +153,126 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
 fun RegisterScreen(onRegister: (String, String) -> Unit, onNavigateToLogin: () -> Unit) {
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)) {
-        OutlinedTextField(value = email.value, onValueChange = { email.value = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = password.value, onValueChange = { password.value = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
-        Button(onClick = { onRegister(email.value, password.value) }, modifier = Modifier.fillMaxWidth()) { Text("Create Account") }
-        Button(onClick = onNavigateToLogin, modifier = Modifier.fillMaxWidth()) { Text("Back to Login") }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(RegisterBgTop, RegisterBgBottom)))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(Color(0x738B3DFF), Color.Transparent),
+                        radius = 700f
+                    )
+                )
+        )
+
+        Card(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 56.dp, start = 16.dp, end = 16.dp)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            border = BorderStroke(1.dp, RegisterStroke),
+            colors = CardDefaults.cardColors(containerColor = RegisterPanel)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("Create account", color = RegisterText, fontWeight = FontWeight.Bold)
+                Text("Set up your profile to start planning workouts", color = RegisterMuted)
+
+                AuthInput(
+                    value = email.value,
+                    onValueChange = { email.value = it },
+                    label = "Email",
+                    stroke = RegisterStroke,
+                    textColor = RegisterText,
+                    mutedColor = RegisterMuted
+                )
+                AuthInput(
+                    value = password.value,
+                    onValueChange = { password.value = it },
+                    label = "Password",
+                    stroke = RegisterStroke,
+                    textColor = RegisterText,
+                    mutedColor = RegisterMuted
+                )
+
+                Button(
+                    onClick = { onRegister(email.value, password.value) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Brush.horizontalGradient(listOf(RegisterPrimary, RegisterPrimary2))),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Create account")
+                }
+
+                Button(
+                    onClick = onNavigateToLogin,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = Color(0xFFCFB2FF)
+                    ),
+                    border = BorderStroke(1.dp, RegisterStroke)
+                ) {
+                    Text("Back to Login")
+                }
+
+                Text(
+                    "Loading state note: keep card layout stable and disable submit while request is in-flight.",
+                    color = RegisterMuted
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0x1AFF5F8F))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        "Error state note: show inline registration error without hiding navigation path back to login.",
+                        color = RegisterDanger
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun AuthInput(value: String, onValueChange: (String) -> Unit, label: String) {
+private fun AuthInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    stroke: Color,
+    textColor: Color,
+    mutedColor: Color
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = LoginMuted) },
+        label = { Text(label, color = mutedColor) },
         modifier = Modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = LoginStroke,
-            unfocusedBorderColor = LoginStroke,
+            focusedBorderColor = stroke,
+            unfocusedBorderColor = stroke,
             focusedContainerColor = Color(0x08FFFFFF),
             unfocusedContainerColor = Color(0x08FFFFFF),
-            focusedTextColor = LoginText,
-            unfocusedTextColor = LoginText,
-            focusedLabelColor = LoginText,
-            unfocusedLabelColor = LoginMuted
+            focusedTextColor = textColor,
+            unfocusedTextColor = textColor,
+            focusedLabelColor = textColor,
+            unfocusedLabelColor = mutedColor
         )
     )
 }
