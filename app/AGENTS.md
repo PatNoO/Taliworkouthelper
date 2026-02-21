@@ -119,12 +119,15 @@ If a ticket is marked **"UI only"**:
 
 ---
 
-## Status Rules
+5. ### Status Rules
 
-1. When starting implementation, move the ticket to **In Progress**.
-2. Keep the ticket in **In Progress** until the Pull Request is merged.
-3. After merge and verification, move the ticket to **Done**.
-4. Do not move tickets between statuses without explicit confirmation.
+1. When implementation begins, move the ticket to **In Progress**.
+2. The ticket must remain in **In Progress** while development and PR review are ongoing.
+3. A ticket may only be moved to **Done** after explicit user confirmation.
+4. When the user confirms to proceed with the next prioritized ticket, the completed ticket must then be moved to **Done**.
+5. The agent must never move tickets to **Done** automatically.
+
+This ensures controlled and deliberate progression between tickets.
 
 ---
 
