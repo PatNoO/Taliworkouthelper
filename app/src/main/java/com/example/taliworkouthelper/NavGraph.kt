@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -19,6 +20,10 @@ import com.example.taliworkouthelper.auth.AuthViewModel
 import com.example.taliworkouthelper.auth.FakeAuthRepository
 import com.example.taliworkouthelper.auth.LoginScreen
 import com.example.taliworkouthelper.auth.RegisterScreen
+import com.example.taliworkouthelper.exercise.ExerciseDetailScreen
+import com.example.taliworkouthelper.exercise.ExerciseLibraryScreen
+import com.example.taliworkouthelper.exercise.ExerciseLibraryViewModel
+import com.example.taliworkouthelper.exercise.FirestoreExerciseRepository
 import com.example.taliworkouthelper.overview.FirestoreOverviewRepository
 import com.example.taliworkouthelper.overview.OverviewScreen
 import com.example.taliworkouthelper.overview.OverviewViewModel
@@ -46,6 +51,7 @@ fun AppNavHost() {
     val activeWorkoutViewModel = remember { ActiveWorkoutViewModel(FirestoreWorkoutSessionRepository()) }
     val templateViewModel = remember { WorkoutTemplateViewModel(FirestoreWorkoutTemplateRepository()) }
     val overviewViewModel = remember { OverviewViewModel(FirestoreOverviewRepository()) }
+    val exerciseViewModel = remember { ExerciseLibraryViewModel(FirestoreExerciseRepository()) }
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -86,10 +92,42 @@ fun AppNavHost() {
                 Button(onClick = { navController.navigate("templates") }) {
                     Text("Open workout templates")
                 }
+                Button(onClick = { navController.navigate("exercises") }) {
+                    Text("Open exercise library")
+                }
                 Button(onClick = { navController.navigate("partners") }) {
                     Text("Open partners")
                 }
             }
+        }
+        composable("exercises") {
+            val state by exerciseViewModel.state.collectAsState()
+            ExerciseLibraryScreen(
+                state = state,
+                onSearchQueryChanged = exerciseViewModel::onSearchQueryChanged,
+                onSelectMuscleGroup = exerciseViewModel::onSelectMuscleGroup,
+                onOpenExerciseDetail = { exerciseId ->
+                    exerciseViewModel.onOpenExerciseDetail(exerciseId)
+                    navController.navigate("exerciseDetail/$exerciseId")
+                },
+                onDismissError = exerciseViewModel::dismissError
+            )
+        }
+        composable("exerciseDetail/{exerciseId}") { backStackEntry ->
+            val state by exerciseViewModel.state.collectAsState()
+            val exerciseId = backStackEntry.arguments?.getString("exerciseId").orEmpty()
+
+            LaunchedEffect(exerciseId) {
+                exerciseViewModel.onOpenExerciseDetail(exerciseId)
+            }
+
+            ExerciseDetailScreen(
+                exercise = state.selectedExercise,
+                onBack = {
+                    exerciseViewModel.onCloseExerciseDetail()
+                    navController.popBackStack()
+                }
+            )
         }
         composable("overview") {
             val state by overviewViewModel.state.collectAsState()
