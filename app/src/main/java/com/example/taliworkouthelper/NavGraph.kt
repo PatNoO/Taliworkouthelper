@@ -26,6 +26,9 @@ import com.example.taliworkouthelper.partner.PartnerViewModel
 import com.example.taliworkouthelper.schedule.FirestoreWorkScheduleRepository
 import com.example.taliworkouthelper.schedule.WorkScheduleScreen
 import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
+import com.example.taliworkouthelper.session.ActiveWorkoutScreen
+import com.example.taliworkouthelper.session.ActiveWorkoutViewModel
+import com.example.taliworkouthelper.session.FirestoreWorkoutSessionRepository
 import com.example.taliworkouthelper.template.FirestoreWorkoutTemplateRepository
 import com.example.taliworkouthelper.template.WorkoutTemplateScreen
 import com.example.taliworkouthelper.template.WorkoutTemplateViewModel
@@ -36,6 +39,7 @@ fun AppNavHost() {
     val authRepo = FakeAuthRepository()
     val authViewModel = remember { AuthViewModel(authRepo) }
     val scheduleViewModel = remember { WorkScheduleViewModel(FirestoreWorkScheduleRepository()) }
+    val activeWorkoutViewModel = remember { ActiveWorkoutViewModel(FirestoreWorkoutSessionRepository()) }
     val templateViewModel = remember { WorkoutTemplateViewModel(FirestoreWorkoutTemplateRepository()) }
 
     NavHost(navController = navController, startDestination = "login") {
@@ -68,6 +72,8 @@ fun AppNavHost() {
                 Button(onClick = { navController.navigate("schedule") }) {
                     Text("Open work schedule")
                 }
+                Button(onClick = { navController.navigate("activeWorkout") }) {
+                    Text("Open active workout")
                 Button(onClick = { navController.navigate("templates") }) {
                     Text("Open workout templates")
                 }
@@ -92,6 +98,18 @@ fun AppNavHost() {
                 onDismissError = scheduleViewModel::dismissError
             )
         }
+        composable("activeWorkout") {
+            val state by activeWorkoutViewModel.state.collectAsState()
+            ActiveWorkoutScreen(
+                state = state,
+                onExerciseNameChanged = activeWorkoutViewModel::onExerciseNameChanged,
+                onRepsChanged = activeWorkoutViewModel::onRepsChanged,
+                onWeightChanged = activeWorkoutViewModel::onWeightChanged,
+                onExerciseNoteChanged = activeWorkoutViewModel::onExerciseNoteChanged,
+                onGeneralNoteChanged = activeWorkoutViewModel::onGeneralNoteChanged,
+                onAddSet = activeWorkoutViewModel::addSetToActiveSession,
+                onCompleteSession = activeWorkoutViewModel::completeActiveSession,
+                onDismissError = activeWorkoutViewModel::dismissError
         composable("templates") {
             val state by templateViewModel.state.collectAsState()
             WorkoutTemplateScreen(
