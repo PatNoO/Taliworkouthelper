@@ -3,6 +3,7 @@ package com.example.taliworkouthelper.schedule
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import java.time.DayOfWeek
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -12,7 +13,7 @@ import kotlinx.coroutines.tasks.await
  * Persists work shifts per authenticated user in Firestore.
  *
  * Schema:
- * users/{uid}/workShifts/{shiftId} with fields startHour and endHour.
+ * users/{uid}/workShifts/{shiftId} with fields startHour, endHour, dayOfWeek.
  */
 class FirestoreWorkScheduleRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
@@ -30,10 +31,15 @@ class FirestoreWorkScheduleRepository(
             val shifts = snapshot?.documents.orEmpty().mapNotNull { document ->
                 val startHour = document.getLong(START_HOUR_FIELD)?.toInt() ?: return@mapNotNull null
                 val endHour = document.getLong(END_HOUR_FIELD)?.toInt() ?: return@mapNotNull null
+                val dayOfWeek = document.getString(DAY_OF_WEEK_FIELD)
+                    ?.let { runCatching { DayOfWeek.valueOf(it) }.getOrNull() }
+                    ?: DayOfWeek.MONDAY
+
                 WorkShift(
                     id = document.id,
                     startHour = startHour,
-                    endHour = endHour
+                    endHour = endHour,
+                    dayOfWeek = dayOfWeek
                 )
             }.sortedBy { it.startHour }
 
@@ -82,7 +88,8 @@ class FirestoreWorkScheduleRepository(
     private fun WorkShift.toFirestoreMap(): Map<String, Any> {
         return mapOf(
             START_HOUR_FIELD to startHour,
-            END_HOUR_FIELD to endHour
+            END_HOUR_FIELD to endHour,
+            DAY_OF_WEEK_FIELD to dayOfWeek.name
         )
     }
 
@@ -91,5 +98,6 @@ class FirestoreWorkScheduleRepository(
         const val WORK_SHIFTS_COLLECTION = "workShifts"
         const val START_HOUR_FIELD = "startHour"
         const val END_HOUR_FIELD = "endHour"
+        const val DAY_OF_WEEK_FIELD = "dayOfWeek"
     }
 }

@@ -1,5 +1,6 @@
 package com.example.taliworkouthelper.schedule
 
+import java.time.DayOfWeek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -90,5 +91,41 @@ class WorkScheduleViewModelTest {
         delay(20)
 
         assertTrue(vm.state.value.shifts.isEmpty())
+    }
+
+    @Test
+    fun `duration filter updates available slots`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+
+        vm.onStartHourChanged("6")
+        vm.onEndHourChanged("7")
+        vm.onSubmitShift()
+        delay(20)
+
+        vm.onStartHourChanged("8")
+        vm.onEndHourChanged("22")
+        vm.onSubmitShift()
+        delay(20)
+
+        vm.setMinDurationMinutes(90)
+        delay(20)
+
+        assertTrue(vm.state.value.availableSlots.isEmpty())
+    }
+
+    @Test
+    fun `week scope includes non working days`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+
+        vm.onStartHourChanged("9")
+        vm.onEndHourChanged("17")
+        vm.onSubmitShift()
+        vm.setAvailabilityScope(AvailabilityScope.WEEK)
+        delay(20)
+
+        val hasTuesdayFullAvailability = vm.state.value.availableSlots.any {
+            it.dayOfWeek == DayOfWeek.TUESDAY && it.startHour == 6 && it.endHour == 22
+        }
+        assertTrue(hasTuesdayFullAvailability)
     }
 }

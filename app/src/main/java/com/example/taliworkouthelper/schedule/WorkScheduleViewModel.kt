@@ -2,6 +2,7 @@ package com.example.taliworkouthelper.schedule
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import java.time.DayOfWeek
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,11 @@ data class WorkScheduleUiState(
     val isSaving: Boolean = false,
     val errorMessage: String? = null,
     val shifts: List<WorkShift> = emptyList(),
-    val form: ShiftFormUiState = ShiftFormUiState()
+    val form: ShiftFormUiState = ShiftFormUiState(),
+    val availabilityScope: AvailabilityScope = AvailabilityScope.DAY,
+    val selectedDay: DayOfWeek = DayOfWeek.MONDAY,
+    val minDurationMinutes: Int = 45,
+    val availableSlots: List<AvailabilitySlot> = emptyList()
 ) {
     val isEmpty: Boolean = !isLoading && shifts.isEmpty()
 }
@@ -52,14 +57,16 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
 
     fun onEditShift(shift: WorkShift) {
         mutableState.update { current ->
-            current.copy(
+            val updated = current.copy(
                 form = ShiftFormUiState(
                     editingShiftId = shift.id,
                     startHourInput = shift.startHour.toString(),
                     endHourInput = shift.endHour.toString()
                 ),
+                selectedDay = shift.dayOfWeek,
                 errorMessage = null
             )
+            updated.withCalculatedAvailability()
         }
     }
 
@@ -80,10 +87,12 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
         }
 
         val validData = validation.getOrThrow()
+        val selectedDay = mutableState.value.selectedDay
         val shift = WorkShift(
             id = formSnapshot.editingShiftId ?: UUID.randomUUID().toString(),
             startHour = validData.startHour,
-            endHour = validData.endHour
+            endHour = validData.endHour,
+            dayOfWeek = selectedDay
         )
 
         viewModelScope.launch {
@@ -113,6 +122,24 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
         }
     }
 
+    fun setAvailabilityScope(scope: AvailabilityScope) {
+        mutableState.update { current ->
+            current.copy(availabilityScope = scope).withCalculatedAvailability()
+        }
+    }
+
+    fun setSelectedDay(day: DayOfWeek) {
+        mutableState.update { current ->
+            current.copy(selectedDay = day).withCalculatedAvailability()
+        }
+    }
+
+    fun setMinDurationMinutes(minutes: Int) {
+        mutableState.update { current ->
+            current.copy(minDurationMinutes = minutes).withCalculatedAvailability()
+        }
+    }
+
     fun dismissError() {
         mutableState.update { current -> current.copy(errorMessage = null) }
     }
@@ -125,7 +152,7 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
                         isLoading = false,
                         shifts = shifts,
                         errorMessage = null
-                    )
+                    ).withCalculatedAvailability()
                 }
             }
         }
@@ -155,5 +182,16 @@ class WorkScheduleViewModel(private val repo: WorkScheduleRepository) : ViewMode
         }
 
         return Result.success(ValidShiftData(startHour, endHour))
+    }
+
+    private fun WorkScheduleUiState.withCalculatedAvailability(): WorkScheduleUiState {
+        return copy(
+            availableSlots = AvailabilityCalculator.calculate(
+                shifts = shifts,
+                scope = availabilityScope,
+                selectedDay = selectedDay,
+                minDurationMinutes = minDurationMinutes
+            )
+        )
     }
 }

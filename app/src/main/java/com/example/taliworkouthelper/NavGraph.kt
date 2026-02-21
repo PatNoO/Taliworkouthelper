@@ -78,6 +78,9 @@ fun AppNavHost() {
                 onCancelEdit = scheduleViewModel::onCancelEdit,
                 onEditShift = scheduleViewModel::onEditShift,
                 onDeleteShift = scheduleViewModel::removeShift,
+                onScopeChange = scheduleViewModel::setAvailabilityScope,
+                onDurationChange = scheduleViewModel::setMinDurationMinutes,
+                onDayChange = scheduleViewModel::setSelectedDay,
                 onDismissError = scheduleViewModel::dismissError
             )
         }
@@ -87,7 +90,9 @@ fun AppNavHost() {
             val partnersState = partnerVm.state.collectAsState(initial = PartnerState())
             PartnerListScreen(
                 partners = partnersState.value.partners,
-                onConnect = { partnerId -> partnerVm.connect(partnerId) {} }
+                onConnect = { partnerId ->
+                    partnerVm.connect(partnerId) { }
+                }
             )
         }
     }
