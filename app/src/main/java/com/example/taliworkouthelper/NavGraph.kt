@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -22,6 +23,9 @@ import com.example.taliworkouthelper.partner.FakePartnerRepository
 import com.example.taliworkouthelper.partner.PartnerListScreen
 import com.example.taliworkouthelper.partner.PartnerState
 import com.example.taliworkouthelper.partner.PartnerViewModel
+import com.example.taliworkouthelper.request.FirestoreTrainingRequestRepository
+import com.example.taliworkouthelper.request.TrainingRequestScreen
+import com.example.taliworkouthelper.request.TrainingRequestViewModel
 import com.example.taliworkouthelper.schedule.FirestoreWorkScheduleRepository
 import com.example.taliworkouthelper.schedule.WorkScheduleScreen
 import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
@@ -30,8 +34,9 @@ import com.example.taliworkouthelper.schedule.WorkScheduleViewModel
 fun AppNavHost() {
     val navController = rememberNavController()
     val authRepo = FakeAuthRepository()
-    val authViewModel = AuthViewModel(authRepo)
-    val scheduleViewModel = WorkScheduleViewModel(FirestoreWorkScheduleRepository())
+    val authViewModel = remember { AuthViewModel(authRepo) }
+    val scheduleViewModel = remember { WorkScheduleViewModel(FirestoreWorkScheduleRepository()) }
+    val trainingRequestViewModel = remember { TrainingRequestViewModel(FirestoreTrainingRequestRepository()) }
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -63,6 +68,9 @@ fun AppNavHost() {
                 Button(onClick = { navController.navigate("schedule") }) {
                     Text("Open work schedule")
                 }
+                Button(onClick = { navController.navigate("trainingRequests") }) {
+                    Text("Open training requests")
+                }
                 Button(onClick = { navController.navigate("partners") }) {
                     Text("Open partners")
                 }
@@ -82,6 +90,20 @@ fun AppNavHost() {
                 onDurationChange = scheduleViewModel::setMinDurationMinutes,
                 onDayChange = scheduleViewModel::setSelectedDay,
                 onDismissError = scheduleViewModel::dismissError
+            )
+        }
+        composable("trainingRequests") {
+            val state by trainingRequestViewModel.state.collectAsState()
+            TrainingRequestScreen(
+                state = state,
+                formatEpoch = trainingRequestViewModel::formatEpoch,
+                onPartnerUidChanged = trainingRequestViewModel::onPartnerUidChanged,
+                onStartChanged = trainingRequestViewModel::onStartChanged,
+                onEndChanged = trainingRequestViewModel::onEndChanged,
+                onSendRequest = trainingRequestViewModel::sendRequest,
+                onAcceptRequest = trainingRequestViewModel::acceptRequest,
+                onDeclineRequest = trainingRequestViewModel::declineRequest,
+                onDismissError = trainingRequestViewModel::dismissError
             )
         }
         composable("partners") {
