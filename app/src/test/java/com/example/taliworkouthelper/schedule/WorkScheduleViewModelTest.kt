@@ -46,6 +46,16 @@ class WorkScheduleViewModelTest {
     }
 
     @Test
+    fun `loading completes with empty state when repository has no shifts`() = runTest {
+        val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
+        delay(20)
+
+        assertFalse(vm.state.value.isLoading)
+        assertTrue(vm.state.value.isEmpty)
+        assertTrue(vm.state.value.shifts.isEmpty())
+    }
+
+    @Test
     fun `invalid range sets validation error`() = runTest {
         val vm = WorkScheduleViewModel(FakeWorkShiftRepository())
 
