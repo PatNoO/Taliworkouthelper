@@ -19,6 +19,10 @@ import com.example.taliworkouthelper.auth.AuthViewModel
 import com.example.taliworkouthelper.auth.FakeAuthRepository
 import com.example.taliworkouthelper.auth.LoginScreen
 import com.example.taliworkouthelper.auth.RegisterScreen
+import com.example.taliworkouthelper.overview.FirestoreOverviewRepository
+import com.example.taliworkouthelper.overview.OverviewScreen
+import com.example.taliworkouthelper.overview.OverviewViewModel
+import com.example.taliworkouthelper.overview.WorkoutSessionDetailScreen
 import com.example.taliworkouthelper.partner.FakePartnerRepository
 import com.example.taliworkouthelper.partner.PartnerListScreen
 import com.example.taliworkouthelper.partner.PartnerState
@@ -41,6 +45,7 @@ fun AppNavHost() {
     val scheduleViewModel = remember { WorkScheduleViewModel(FirestoreWorkScheduleRepository()) }
     val activeWorkoutViewModel = remember { ActiveWorkoutViewModel(FirestoreWorkoutSessionRepository()) }
     val templateViewModel = remember { WorkoutTemplateViewModel(FirestoreWorkoutTemplateRepository()) }
+    val overviewViewModel = remember { OverviewViewModel(FirestoreOverviewRepository()) }
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -69,11 +74,15 @@ fun AppNavHost() {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("Welcome to Tali Workout Helper - Home")
+                Button(onClick = { navController.navigate("overview") }) {
+                    Text("Open overview")
+                }
                 Button(onClick = { navController.navigate("schedule") }) {
                     Text("Open work schedule")
                 }
                 Button(onClick = { navController.navigate("activeWorkout") }) {
                     Text("Open active workout")
+                }
                 Button(onClick = { navController.navigate("templates") }) {
                     Text("Open workout templates")
                 }
@@ -81,6 +90,27 @@ fun AppNavHost() {
                     Text("Open partners")
                 }
             }
+        }
+        composable("overview") {
+            val state by overviewViewModel.state.collectAsState()
+            OverviewScreen(
+                state = state,
+                onOpenSessionDetail = { sessionId ->
+                    overviewViewModel.selectSession(sessionId)
+                    navController.navigate("sessionDetail/$sessionId")
+                },
+                onDismissError = overviewViewModel::dismissError
+            )
+        }
+        composable("sessionDetail/{sessionId}") {
+            val state by overviewViewModel.state.collectAsState()
+            WorkoutSessionDetailScreen(
+                session = state.selectedSession,
+                onBack = {
+                    overviewViewModel.clearSelectedSession()
+                    navController.popBackStack()
+                }
+            )
         }
         composable("schedule") {
             val state by scheduleViewModel.state.collectAsState()
@@ -110,6 +140,8 @@ fun AppNavHost() {
                 onAddSet = activeWorkoutViewModel::addSetToActiveSession,
                 onCompleteSession = activeWorkoutViewModel::completeActiveSession,
                 onDismissError = activeWorkoutViewModel::dismissError
+            )
+        }
         composable("templates") {
             val state by templateViewModel.state.collectAsState()
             WorkoutTemplateScreen(
